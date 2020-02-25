@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AuthRequest;
+use App\Http\Requests\loginRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -27,7 +30,14 @@ class AuthController extends Controller
 
         try {
             // Register a new user
-            $user = User::create($request->all());
+            $user = User::create([
+                'name'     => $request->name,
+                'email'    => $request->email,
+                'password' => Hash::make($request->password)
+            ]);
+
+            // Do Login
+            Auth::login($user);
 
             // Get your token
             $tokenResult = $user->createToken('Personal Access Token');
@@ -51,5 +61,31 @@ class AuthController extends Controller
                 'message' => $th->getMessage()
             ], $this->failStatus);
         }
+    }
+
+    /**
+     * Do Login
+     *
+     */
+    public function login(loginRequest $request)
+    {
+        // Do attempt with the data passed
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], $this->failStatus);
+        }
+
+        // Find the user
+        $user = $request->user();
+
+        // Get your token
+        $tokenResult = $user->createToken('Personal Access Token');
+
+        // Return json success response
+        return response()->json([
+            'access_token' => $tokenResult->accessToken,
+            'token_type'   => 'Bearer',
+        ], $this->successStatus);
     }
 }

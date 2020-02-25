@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 
 Route::prefix('v1')->group(function () {
     Route::post('register', 'AuthController@signup');
+    Route::post('login', 'AuthController@login');
 
 });
 
